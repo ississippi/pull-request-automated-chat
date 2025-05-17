@@ -1,0 +1,12 @@
+langchain>=0.1.14
+langchain-community>=0.0.30
+langchain-core>=0.1.33
+langchain-anthropic>=0.1.5
+langchain-core>=0.1.33
+redis
+boto3
+python-dotenv
+python-dateutil
+PyGithub
+uvicorn[standard]
+fastapi[all]

@@ -1,0 +1,40 @@
+name: Trigger an Automated Code Review API Call for a newly created PR
+
+on:
+  pull_request:
+      types:
+        - opened
+        - reopened
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code (optional)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Make the API call with additional PR fields
+      - name: Trigger Automated Code Review API
+        env:
+          API_TOKEN: ${{ secrets.CODE_REVIEW_API_KEY }} 
+          API_URL: "https://api.codeominous.com/prrequest" 
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer $CODE_REVIEW_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "pr_event_type": "${{ github.event.action }}",
+              "pr_number": "${{ github.event.pull_request.number }}",
+              "repo": "${{ github.repository }}",
+              "pr_title": "${{ github.event.pull_request.title }}",
+              "user_login": "${{ github.event.pull_request.user.login }}",
+              "created_at": "${{ github.event.pull_request.created_at }}",
+              "pr_state": "${{ github.event.pull_request.state }}",
+              "pr_body": "${{ github.event.pull_request.body }}",
+              "html_url": "${{ github.event.pull_request.html_url }}",
+              "head_sha": "${{ github.event.pull_request.head.sha }}",
+              "base_ref": "${{ github.event.pull_request.base.ref }}"
+            }' \
+            $API_URL

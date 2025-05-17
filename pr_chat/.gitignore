@@ -1,0 +1,55 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.env.*
+env.json
+
+# Logs
+*.log
+
+# Python virtual environments
+.venv/
+venv/
+ENV/
+chroma_load/chroma_venv/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Pytest cache
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# macOS
+.DS_Store
+
+# Other
+*.db
+*.sqlite3
+
+
+# Jupyter Notebooks checkpoints
+notebooks/.ipynb_checkpoints
