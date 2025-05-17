@@ -1,0 +1,23 @@
+services:
+  chat-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-api
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AWS_REGION: us-east-1
+    volumes:
+      - ~/.aws:/root/.aws:ro
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: chat-redis
+    ports:
+      - "6379:6379"
+    restart: always
