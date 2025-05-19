@@ -26,9 +26,18 @@
         let socket;
 
         function connect() {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                console.log("WebSocket is already connecting or connected.");
+                return;
+            }
             const userId = document.getElementById("userId").value;
             const sessionId = document.getElementById("sessionId").value;
-            const url = `ws://localhost:8080/ws/chat/${userId}/${sessionId}`;
+            //const url = `ws://localhost:8080/ws/chat/${userId}/${sessionId}`;
+            //const url = `ws://notifications.codeominous.com//ws/chat/${userId}/${sessionId}`;
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const url = `${protocol}//notifications.codeominous.com/ws/chat/${userId}/${sessionId}`;
+
+            
 
             socket = new WebSocket(url);
 
