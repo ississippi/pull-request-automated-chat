@@ -1,0 +1,21 @@
+{
+  "cluster": "pr-notifications-cluster",
+  "serviceName": "chat-api-test",
+  "taskDefinition": "chat-api-task",
+  "launchType": "FARGATE",
+  "desiredCount": 1,
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": ["subnet-0b2933f32469d1d20", "subnet-0842140ad3ff98009"],
+      "securityGroups": ["sg-0125f1582b0801c21"],
+      "assignPublicIp": "ENABLED"
+    }
+  },
+  "loadBalancers": [
+    {
+      "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:238338230919:targetgroup/chat-api-manual-tg/4832a346e51ddb93",
+      "containerName": "chat-ws-app",
+      "containerPort": 8080
+    }
+  ]
+}

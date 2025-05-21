@@ -1,0 +1,16 @@
+{
+  "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:238338230919:listener/app/pr-notifications-alb/f2a975bdfb1e112b/5e95a45de6b23690",
+  "Priority": 42,
+  "Conditions": [
+    {
+      "Field": "path-pattern",
+      "Values": ["/chat/*", "/ws/*", "/"]
+    }
+  ],
+  "Actions": [
+    {
+      "Type": "forward",
+      "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:238338230919:targetgroup/chat-api-manual-tg/4832a346e51ddb93"
+    }
+  ]
+}

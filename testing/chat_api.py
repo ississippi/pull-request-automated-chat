@@ -20,15 +20,27 @@ class ChatRequest(BaseModel):
     user_id: str
     session_id: str
     message: str
+    repo: str
+    pr_number: int
 
 @app.post("/chat/send")
 async def chat_send(req: ChatRequest):
+    print(f"Received request: {req}")
     session_key = f"chat:{req.session_id}"
 
     # Load existing conversation from Redis
     history_json = r.get(session_key)
     history = json.loads(history_json) if history_json else []
 
+    if not any(turn.get("user") == "diffs" for turn in history):
+        diffs = git_provider.get_supported_diffs(req.repo, req.pr_number)
+        if diffs is None:
+            return {"reply": "Error fetching diffs."}
+        history.append({"user": "diffs", "ai": diffs})
+
+
+    # Add diffs to the conversation
+    history.append({"user": "diffs", "ai": diffs})
     # Load into LangChain memory
     memory = ConversationBufferMemory(return_messages=True)
     for turn in history:
