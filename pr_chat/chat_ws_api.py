@@ -3,8 +3,11 @@ import os
 import json
 import boto3
 from pydantic import BaseModel
+import logging
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+from fastapi.requests import Request
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from langchain_community.chat_message_histories import DynamoDBChatMessageHistory
@@ -26,8 +29,19 @@ class ChatRequest(BaseModel):
     repo: str
     pr_number: int
 
+class SuppressHealthCheckLogsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path == "/":
+            logging.getLogger("uvicorn.access").disabled = True
+        response = await call_next(request)
+        logging.getLogger("uvicorn.access").disabled = False
+        return response
+
+
 # FastAPI app
 app = FastAPI()
+app.add_middleware(SuppressHealthCheckLogsMiddleware)
+
 llm = None
 ANTHROPIC_API_KEY = None
 @asynccontextmanager
@@ -110,10 +124,11 @@ async def websocket_chat(websocket: WebSocket, user_id: str, session_id: str):
             chatMessage = json.loads(message)
             repo = chatMessage.get("repo")
             pr_number = chatMessage.get("pr_number")
-            diffs = get_pr_diffs(repo, pr_number)
+            user_msg = chatMessage.get("message")
 
-            # Augment the message with diffs
-            augmented_message = f"PR DIFFS:\n{diffs}\n\nUser Message:\n{chatMessage.get('message')}"
+            diffs = get_pr_diffs(repo, pr_number)
+            # Create an augmented message with diffs
+            augmented_message = f"PR DIFFS:\n{diffs}\n\nUser Message:\n{user_msg}"
 
             try:
                 response = get_chat_chain().invoke(
@@ -121,6 +136,8 @@ async def websocket_chat(websocket: WebSocket, user_id: str, session_id: str):
                     config={"configurable": {"session_id": session_id}},
                 )
                 await websocket.send_text(response)
+                # Save this turn to DynamoDB
+                save_to_dynamodb(session_id, [{"user": chatMessage.get("message"), "ai": response}])
 
             except Exception as e:
                 print("🔥 LLM invocation failed:")
