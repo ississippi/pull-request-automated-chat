@@ -1,8 +1,8 @@
 # chat_ws_api.py
 import os
 import json
-import redis
 import boto3
+from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -13,12 +13,18 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableWithMessageHistory
 import traceback
+import git_provider
 
 class PatchedDynamoDBChatMessageHistory(DynamoDBChatMessageHistory):
     @property
     def key(self):
         return {"id": self.session_id}
-
+class ChatRequest(BaseModel):
+    user_id: str
+    session_id: str
+    message: str
+    repo: str
+    pr_number: int
 
 # FastAPI app
 app = FastAPI()
@@ -47,9 +53,18 @@ prompt = ChatPromptTemplate.from_messages([
     ("system", "You're a helpful assistant."),
     ("human", "{input}")
 ])
+
+def get_pr_diffs(repo, pr_number):
+    print(f"get_pr_diffs(): repo: {repo}, pr_number: {pr_number}")
+    diffs = git_provider.get_supported_diffs(repo, pr_number)
+    if diffs is None:
+        return "Error fetching diffs."
+    print("Fetched diffs successfully.")
+    return diffs  
+
 # DDB for chat history
 def get_history(session_id: str):
-    print(f"[DEBUG] Using session_id={session_id} (type: {type(session_id)})")
+    print(f"get_history(): Using session_id={session_id}")
     return DynamoDBChatMessageHistory(
         table_name="ChatMemory",
         session_id=session_id,
@@ -66,6 +81,19 @@ def get_chat_chain():
         history_messages_key="messages"
     )
 
+def save_to_dynamodb(session_id: str, history: list):
+    ddb = boto3.client("dynamodb", region_name="us-east-1")
+    table_name = "ChatMemory"
+    for turn in history:
+        ddb.put_item(
+            TableName=table_name,
+            Item={
+                "session_id": {"S": session_id},
+                "user": {"S": turn["user"]},
+                "ai": {"S": turn["ai"]}
+            }
+        )
+
 # WebSocket chat endpoint
 @app.websocket("/ws/chat/{user_id}/{session_id}")
 async def websocket_chat(websocket: WebSocket, user_id: str, session_id: str):
@@ -77,12 +105,20 @@ async def websocket_chat(websocket: WebSocket, user_id: str, session_id: str):
             print(f"🔑 ANTHROPIC_API_KEY length is: {len(ANTHROPIC_API_KEY)}. Connected to Claude.")
         while True:
             message = await websocket.receive_text()
-            print(f"Received message from {user_id}/{session_id}: {message}")
+            print(f"Received message from {user_id}/{session_id}")
+            print(f"Message: {message}")
+            chatMessage = json.loads(message)
+            repo = chatMessage.get("repo")
+            pr_number = chatMessage.get("pr_number")
+            diffs = get_pr_diffs(repo, pr_number)
+
+            # Augment the message with diffs
+            augmented_message = f"PR DIFFS:\n{diffs}\n\nUser Message:\n{chatMessage.get('message')}"
 
             try:
                 response = get_chat_chain().invoke(
-                    {"input": message},
-                    config={"configurable": {"session_id": session_id}}
+                    {"input": augmented_message},
+                    config={"configurable": {"session_id": session_id}},
                 )
                 await websocket.send_text(response)
 

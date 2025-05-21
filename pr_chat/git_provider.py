@@ -75,6 +75,7 @@ def get_pr_diff(repo,pr_number):
         print(f"Error: {response.status_code}")
 
 def get_supported_diffs(repo, pr_number):
+    print(f"Fetching supported diffs for PR #{pr_number} in {repo}...")
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     headers = {
             "Authorization": f"token {GIT_API_KEY}",
