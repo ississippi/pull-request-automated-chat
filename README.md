@@ -13,7 +13,7 @@ Use the test client for local testing:
 
 The Automated Pull Request Reviewer Bot leverages Large Language Models (LLMs) to  automate the review of pull requests (PRs) . The purpose is to  enhance the efficiency and accuracy of code reviews by providing detailed feedback,  identifying potential issues, and suggesting improvements to streamline the code review process.
 
-** See /CloudFormation for all CF templates for this project. **  
+**See /CloudFormation for all CF templates for this project.**  
 ** See /docs/Deployments.docx for notes on build and deployments of all related components including CF for the infrastructure.**  
 ** See pull-request-automated-review/docs for all project documentation.
 
